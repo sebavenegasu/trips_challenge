@@ -15,10 +15,10 @@ class MyUser(HttpUser):
     def get_weekly_average(self):
         self.client.post("/weekly_average", json={
             "min_longitude": 0.0,
-            "max_longitude": 10.0,
+            "max_longitude": 100.0,
             "min_latitude": 0.0,
-            "max_latitude": 10.0,
-            "region": "Region A"
+            "max_latitude": 100.0,
+            "region": "Prague"
         })  # Llamada al endpoint de promedio semanal
 
     def on_start(self):
