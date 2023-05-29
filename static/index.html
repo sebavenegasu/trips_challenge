@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ingesta de Datos</title>
+    <style>
+        body {
+            margin: 20px;
+        }
+        #messages {
+            height: 200px;
+            overflow: auto;
+            margin-bottom: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        .button-container {
+            margin-bottom: 20px;
+        }
+        .form-container {
+            margin-bottom: 20px;
+        }
+        .result-container {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Estado de la Ingesta de Datos</h1>
+    <div id="messages"></div>
+
+    <div class="button-container">
+        <button onclick="loadCsv()">Cargar CSV</button>
+        <button onclick="loadGrouped()">Cargar Agrupados</button>
+    </div>
+
+    <div class="form-container">
+        <form onsubmit="event.preventDefault(); calculateWeeklyAverage()">
+            <label>
+                Región:
+                <input type="text" id="regionInput" required>
+            </label>
+            <br>
+            <label>
+                Longitud mínima:
+                <input type="number" id="minLongitudeInput" step="0.0001" required>
+            </label>
+            <br>
+            <label>
+                Longitud máxima:
+                <input type="number" id="maxLongitudeInput" step="0.0001" required>
+            </label>
+            <br>
+            <label>
+                Latitud mínima:
+                <input type="number" id="minLatitudeInput" step="0.0001" required>
+            </label>
+            <br>
+            <label>
+                Latitud máxima:
+                <input type="number" id="maxLatitudeInput" step="0.0001" required>
+            </label>
+            <br>
+            <button type="submit">Calcular Promedio Semanal</button>
+        </form>
+    </div>
+
+    <div class="result-container">
+        <div id="weeklyAverageResult"></div>
+    </div>
+
+    <h2>Trips Agrupados</h2>
+    <div class="button-container">
+        <button onclick="fetchGroupedTrips()">Mostrar Trips Agrupados</button>
+    </div>
+    <div class="table-container">
+        <table id="groupedTripsTable">
+            <tr>
+                <th>Región</th>
+                <th>Coordenada de Origen</th>
+                <th>Coordenada de Destino</th>
+                <th>ID Grupo</th>
+                <th>Promedio de Hora</th>
+                <th>Conteo</th>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        var ws = new WebSocket("ws://localhost:8080/ws");
+
+        ws.onmessage = function(event) {
+            var messages = document.getElementById('messages');
+            var message = document.createElement('p');
+            message.textContent = event.data;
+            messages.appendChild(message);
+        };
+
+        ws.onclose = function(event) {
+            console.log("WebSocket closed", event);
+        };
+
+        ws.onerror = function(event) {
+            console.log("WebSocket error", event);
+        };
+
+        function loadCsv() {
+            fetch('/load_csv', { method: 'POST' });
+        }
+
+        function loadGrouped() {
+            fetch('/load_grouped', { method: 'POST' });
+        }
+
+        function calculateWeeklyAverage() {
+            var region = document.getElementById('regionInput').value;
+            var minLongitude = parseFloat(document.getElementById('minLongitudeInput').value);
+            var maxLongitude = parseFloat(document.getElementById('maxLongitudeInput').value);
+            var minLatitude = parseFloat(document.getElementById('minLatitudeInput').value);
+            var maxLatitude = parseFloat(document.getElementById('maxLatitudeInput').value);
+
+            var requestData = {
+                region: region,
+                min_longitude: minLongitude,
+                max_longitude: maxLongitude,
+                min_latitude: minLatitude,
+                max_latitude: maxLatitude
+            };
+
+            fetch('/weekly_average', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                var resultContainer = document.getElementById('weeklyAverageResult');
+                resultContainer.textContent = "Promedio Semanal: " + data['weekly average'];
+            });
+        }
+
+        function updateGroupedTrips(groupedTrips) {
+            var table = document.getElementById('groupedTripsTable');
+            // Limpiar la tabla antes de agregar nuevos datos
+            while (table.rows.length > 1) {
+                table.deleteRow(1);
+            }
+
+            for (var i = 0; i < groupedTrips.length; i++) {
+                var trip = groupedTrips[i];
+
+                var row = table.insertRow(-1);
+                var regionCell = row.insertCell(0);
+                var originCell = row.insertCell(1);
+                var destinationCell = row.insertCell(2);
+                var timeGroupCell = row.insertCell(3);
+                var averageHourCell = row.insertCell(4);
+                var countCell = row.insertCell(5);
+
+                regionCell.textContent = trip.region;
+                originCell.textContent = JSON.stringify(trip.origin_coord);
+                destinationCell.textContent = JSON.stringify(trip.destination_coord);
+                timeGroupCell.textContent = trip.time_group;
+                averageHourCell.textContent = trip.average_hour;
+                countCell.textContent = trip.count;
+            }
+        }
+
+        function fetchGroupedTrips() {
+            fetch('/grouped_trips')
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                updateGroupedTrips(data);
+            });
+        }
+
+        // Actualizar los trips agrupados al cargar la página
+        fetchGroupedTrips();
+    </script>
+</body>
+</html>
