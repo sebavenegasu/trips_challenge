@@ -1,6 +1,6 @@
 # Proyecto de NeuralWorks
 
-Este proyecto es una solución al problema planteado por NeuralWorks en el que se exploran los patrones de movimiento de las personas para optimizar el transporte público. El proyecto está construido con FastAPI y utiliza PostGIS como base de datos. La aplicación está dockerizada y también se incluye una interfaz básica en HTML para interactuar con ella. Y al final de este README una explicacion del diagrama de GCP.
+Este proyecto es una solución al problema planteado por NeuralWorks. El proyecto está construido con FastAPI y utiliza PostGIS como base de datos. La aplicación está dockerizada y también se incluye una interfaz básica en HTML para interactuar con ella. Y al final de este README una explicacion del diagrama de GCP.
 
 ## Cómo Ejecutar el Proyecto
 
